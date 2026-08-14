@@ -1,0 +1,26 @@
+diff --git a/node_modules/naudiodon/index.js b/node_modules/naudiodon/index.js
+index 9d7a80b..feca841 100644
+--- a/node_modules/naudiodon/index.js
++++ b/node_modules/naudiodon/index.js
+@@ -99,8 +99,6 @@ function AudioIO(options) {
+     ioStream.emit('finished');
+   });
+ 
+-  ioStream.on('error', err => console.error('AudioIO:', err));
+-
+   return ioStream;
+ }
+ exports.AudioIO = AudioIO;
+diff --git a/node_modules/naudiodon/src/PaContext.cc b/node_modules/naudiodon/src/PaContext.cc
+index 2801bd5..02a8c58 100644
+--- a/node_modules/naudiodon/src/PaContext.cc
++++ b/node_modules/naudiodon/src/PaContext.cc
+@@ -173,8 +173,6 @@ bool PaContext::getErrStr(std::string& errStr, bool isInput) {
+   std::shared_ptr<AudioOptions> options = isInput ? mInOptions : mOutOptions;
+   if (options->closeOnError()) // propagate the error back to the stream handler
+     errStr = mErrStr;
+-  else if (mErrStr.length())
+-    printf("AudioIO: %s\n", mErrStr.c_str());
+   mErrStr.clear();
+   return !errStr.empty();
+ }

@@ -1,154 +1,97 @@
-# paron
+# Paron
 
-> P2P VOIP on Pear & Bare Runtime
+Serverless, end-to-end encrypted peer-to-peer (P2P) VoIP and text chat for the terminal.
 
-P2P VOIP application built with [pear-runtime] and [Bare], featuring peer-to-peer connectivity and OTA updates.
+Built on **Hyperswarm DHT**, **Protomux**, and **48 kHz Opus HD** audio.
 
-This boilerplate uses the companion [`hello-pear-worker`][hello-pear-worker] as a reusable cross-platform local backend. Keeping networking, storage and updates in a separate worker lets mobile apps, desktop UIs and standalone Bare applications share the same backend implementation while each parent owns its platform-specific interface.
+---
 
-- Peer-to-Peer deployment with [pear][pear-docs] CLI
-- Peer-to-Peer Over-the-Air updates with [`pear-runtime`][pear-runtime] module
-- Bare worker process via `PearRuntime.run(...)`
-- Cross-platform standalone distributables via [`bare-build`][bare-build]
+## Features
 
-## Variants
+- **Decentralized & Serverless**: Direct P2P audio and text over Hyperswarm DHT with Noise encryption.
+- **48 kHz Opus HD Audio**: Low-latency voice with WebAssembly Opus codec and 20 ms frames.
+- **Voice Activity Detection (VAD)**: Transmits only when speaking. Configurable sensitivity (`/vad`).
+- **Concurrent Text Chat**: Send and receive instant messages alongside voice.
+- **Multi-Device Support**: Works across separate USB microphones and speaker outputs.
 
-- (current) [`main`](https://github.com/holepunchto/hello-pear-bare/tree/main): runs `pear-runtime` inside a Bare worker thread.
-- [`single-thread`](https://github.com/holepunchto/hello-pear-bare/tree/variant/single-thread): workerless with `pear-runtime` updates.
-- [`daemon`](https://github.com/holepunchto/hello-pear-bare/tree/variant/daemon): runs `pear-runtime` in a detached updater daemon.
-
-## Table of Contents
-
-- [OS Support](#os-support)
-- [Requirements](#requirements)
-- [Development](#development)
-  - [Install Dependencies](#install-dependencies)
-  - [Create an upgrade link](#create-an-upgrade-link)
-  - [Start](#start)
-- [Architecture](#architecture)
-  - [Updates](#updates)
-  - [Workers](#workers)
-- [Peer-to-Peer Deployments](#peer-to-peer-deployments)
-- [Installing Distributables](#installing-distributables)
-- [Scripts](#scripts)
-- [Project Structure](#project-structure)
-- [Troubleshooting](#troubleshooting)
-
-## OS Support
-
-- **macOS** — arm64, x64
-- **Linux** — arm64, x64
-- **Windows** — arm64, x64
+---
 
 ## Requirements
 
-- `npm` via [Node.js][nodejs]
-- [pear][pear-docs] - `npx pear`
+- [Node.js](https://nodejs.org) v18+ (or [Bare Runtime](https://github.com/holepunchto/bare))
+- Windows, macOS, or Linux
 
-## Development
+---
 
-### Install Dependencies
+## Quick Start
 
 ```sh
+# 1. Clone and install dependencies
+git clone <repo-url>
+cd paron
 npm install
-```
 
-### Create an upgrade link
-
-This template expects `package.json` to contain a valid `pear://` link in the `upgrade` field. If it still contains the placeholder `pear://<YOUR_KEY_HERE>`, startup will fail with `INVALID_URL`.
-
-Create a link with [`pear touch`](https://docs.pears.com/reference/cli.html#pear-touch-flags-channel):
-
-```sh
-pear touch
-```
-
-Copy the generated `pear://...` link into the `upgrade` field in `package.json`.
-
-### Start
-
-Start app in development mode:
-
-```sh
+# 2. Start the interactive CLI
 npm start
 ```
 
-By default this repo starts with `--no-updates` in development to avoid local dev binaries being swapped while you iterate.
+---
 
-Enable updates for local flow testing:
+## CLI Flags
 
-```sh
-npm start -- --updates
-```
-
-## Architecture
-
-### Updates
-
-Updates are managed by the `App` class in `app.js`, which wraps the updater lifecycle as a ready resource and emits update events for `bin.mjs` to log.
-
-The worker uses `pear-runtime` and the configured `upgrade` link in `package.json`.
-
-Per-run disable updates:
+Skip the startup wizard with CLI flags:
 
 ```sh
-npm start -- --no-updates
+# Create a new room
+npm start -- --create meeting --name Alice
+
+# Join an existing room by name or 64-hex code
+npm start -- --join meeting --name Bob
+
+# Join in text-only mode (disable mic/audio)
+npm start -- --join meeting --no-audio
+
+# Set microphone VAD threshold (0 = continuous, 150 = default)
+npm start -- --join meeting --vad 100
 ```
 
-### Workers
+| Flag                 | Short | Description                         |
+| :------------------- | :---- | :---------------------------------- |
+| `--create [name]`    | `-c`  | Create a new room with a given name |
+| `--join [code/name]` | `-j`  | Join a room by name or 64-hex code  |
+| `--name [nick]`      | `-n`  | Set your display nickname           |
+| `--vad [0-500]`      |       | Set microphone VAD energy threshold |
+| `--no-audio`         |       | Text-only mode                      |
+| `--version`          | `-v`  | Show version                        |
+| `--help`             | `-h`  | Show help                           |
 
-The main CLI starts `workers/main.js` as a Bare sidecar and communicates with it over framed IPC.
+---
 
-## Peer-to-Peer Deployments
+## In-Room Commands
 
-Use the [`pear`][pear-docs] CLI to deploy applications.
+Type messages directly into the prompt to chat, or use slash commands:
 
-Set the `upgrade` field in `package.json` to your distribution drive link, then follow the default flow from section 4 onward:
+| Command           | Description                               |
+| :---------------- | :---------------------------------------- |
+| `/m`, `/mute`     | Mute or unmute your microphone            |
+| `/vad <0-500>`    | Get or adjust microphone VAD threshold    |
+| `/users`, `/list` | List participants in the room             |
+| `/code`           | Print the 64-hex room invite code         |
+| `/devices`        | List available audio input/output devices |
+| `/q`, `/quit`     | Leave the room and exit                   |
 
-[hello-pear-electron: 4. Build Deployment Directory and onward](https://github.com/holepunchto/hello-pear-electron#4-build-deployment-directory-)
+---
 
-## Installing Distributables
-
-Once the `pear://<key>` upgrade link is seeding the build deployment folder the CLI standalone binary can be installed peer-to-peer directly onto the system with Pear:
+## Development & Tests
 
 ```sh
-npx pear-install pear://<key>
+npm test        # Run unit & integration tests (Brittle)
+npm run lint    # Check code style and linting (Prettier + Lunte)
+npm run format  # Auto-format codebase
 ```
 
-## Scripts
+---
 
-- `npm start` - run the Bare CLI in dev mode (`bare bin.mjs --no-updates`)
-- `npm test` - run `brittle-bare` tests
-- `npm run lint` - run prettier check and lunte
-- `npm run format` - format repository with prettier
-- `npm run make` - auto-detect host OS/arch and run matching build target
-- `npm run make:darwin-arm64` - build standalone to `out/darwin-arm64`
-- `npm run make:darwin-x64` - build standalone to `out/darwin-x64`
-- `npm run make:linux-arm64` - build standalone to `out/linux-arm64`
-- `npm run make:linux-x64` - build standalone to `out/linux-x64`
-- `npm run make:win32-arm64` - build standalone to `out/win32-arm64`
-- `npm run make:win32-x64` - build standalone to `out/win32-x64`
+## License
 
-## Project Structure
-
-- `bin.mjs` - CLI entrypoint and runtime wiring
-- `app.js` - update resource used by the entrypoint
-- `workers/main.js` - Bare worker example
-- `scripts/make.js` - platform/arch build target selector
-- `test/index.js` - brittle-bare tests
-
-## Troubleshooting
-
-- `INVALID_URL: Invalid URL 'pear://<YOUR_KEY_HERE>'` means the placeholder `upgrade` link in `package.json` has not been replaced. Run `pear touch`, then put the generated `pear://...` link in `package.json`.
-- If updates do not trigger, verify `package.json` contains a valid `upgrade` Pear link and that peers are seeding the target drive.
-- If `npm run make` fails on unsupported hosts, run a specific `make:<platform>-<arch>` script or build on a supported host.
-- This template does not implement app-level data persistence; it is a minimal CLI + updater example.
-
-<!-- Reference Links -->
-
-[pear-docs]: https://docs.pears.com
-[hello-pear-worker]: https://github.com/holepunchto/hello-pear-worker
-[pear-runtime]: https://github.com/holepunchto/pear-runtime
-[Bare]: https://github.com/holepunchto/bare
-[nodejs]: https://nodejs.org
-[bare-build]: https://github.com/holepunchto/bare-build
+Apache-2.0
