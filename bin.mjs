@@ -4,17 +4,17 @@ import { isWindows } from "which-runtime";
 import pkg from "./package.json" with { type: "json" };
 import ParonCLI from "./lib/cli.js";
 
-const appName = pkg.productName || pkg.name;
+const appName = pkg.name;
 
 const cmd = command(
   appName,
   summary(pkg.description || "P2P VOIP & Chat"),
-  flag("--create|-c [name]", "Luo uusi huone annetulla nimellä"),
-  flag("--join|-j [code]", "Liity huoneeseen koodilla tai nimellä"),
-  flag("--name|-n [nick]", "Aseta oma nimimerkki"),
-  flag("--no-audio", "Käynnistä ilman ääntä (vain teksti-chat)"),
-  flag("--vad [threshold]", "Aseta mikrofonin VAD-kynnysarvo (oletus 150)"),
-  flag("--version|-v", "Näytä versio"),
+  flag("--create|-c [name]", "Create a new room with the given name"),
+  flag("--join|-j [code]", "Join a room by code or name"),
+  flag("--name|-n [nick]", "Set your display name"),
+  flag("--no-audio", "Start without audio (text chat only)"),
+  flag("--vad [threshold]", "Set microphone VAD threshold (default 150)"),
+  flag("--version|-v", "Show version"),
 );
 
 const argv =
